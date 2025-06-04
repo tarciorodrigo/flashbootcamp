@@ -1,3 +1,5 @@
+"use client";
+
 import { StakeCard } from "@/components/commons/stakeCard";
 import { StatusCard } from "@/components/commons/statusCard";
 import { TaskCard } from "@/components/commons/taskCard";
@@ -13,8 +15,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { PlusIcon, WalletIcon } from "lucide-react";
+import { PlusIcon, WalletIcon, XIcon } from "lucide-react";
 import Image from "next/image";
+import { useEffect, useState } from "react";
+import { createWalletClient, custom } from "viem";
+import { anvil } from "viem/chains";
 
 const tasks: any[] = [
   {
@@ -48,6 +53,33 @@ const tasks: any[] = [
 ];
 
 export default function Home() {
+  const [walletClient, setWalletClient] = useState<any>(null);
+  const [address, setAddress] = useState<string | null>(null);
+
+  useEffect(() => {
+    const client = createWalletClient({
+      chain: anvil,
+      transport: custom((window as any).ethereum!),
+    });
+
+    setWalletClient(client);
+  }, []);
+
+  const connectWallet = async () => {
+    if (!(window as any).ethereum) {
+      alert("Please install a web3 wallet like MetaMask.");
+      return;
+    }
+
+    const address = await walletClient.requestAddresses();
+    setAddress(address);
+  };
+
+  const disconnectWallet = async () => {
+    setAddress(null);
+    // Optionally, you can also reset the wallet client or perform other cleanup actions
+  };
+
   return (
     <div className="flex flex-col min-h-screen max-w-7xl mx-auto pt-10">
       <div className="flex justify-between items-center p-4">
@@ -57,10 +89,21 @@ export default function Home() {
             Gerencia suas atividades
           </h2>
         </div>
-        <Button>
-          <WalletIcon />
-          <span>Connect wallet</span>
-        </Button>
+        {!address ? (
+          <Button onClick={connectWallet} className="cursor-pointer">
+            <WalletIcon />
+            <span>Connect wallet</span>
+          </Button>
+        ) : (
+          <div className="flex items-center gap-2">
+            {/* <span>{address}</span> */}
+            <WalletIcon className="size-6" />
+            <span className="text-sm text-muted-foreground">Connected</span>
+            <Button onClick={disconnectWallet}>
+              <XIcon />
+            </Button>
+          </div>
+        )}
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-10">
         <StatusCard title="Total de tarefas" value={10} />
